@@ -1,92 +1,88 @@
 <!-- templates/dashboard.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 </head>
 <body>
     <header>
         <h1>Solar Billing Calculator</h1>
-        <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+        <div class="header-controls">
+            <div class="theme-switcher">
+                <img src="" id="theme-icon" alt="Theme Toggle">
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+        </div>
     </header>
 
     <main class="container">
         <section class="controls-section">
-            <h2>1. Select Customer and Date Range</h2>
+            <h2>Select Customer and Date Range</h2>
+
             <div class="form-group">
                 <label for="customer-select">Customer:</label>
-                <select id="customer-select" name="customer">
-                    <option value="">Loading customers...</option>
-                </select>
+                <select id="customer-select" name="customer"><option value="">Loading...</option></select>
             </div>
+
             <div class="form-group">
-                <label>Billing Period:</label>
-                <div id="calendar-container"></div>
+                <label for="date-range-picker">Billing Period:</label>
+                <input type="text" id="date-range-picker" placeholder="Pick Date Range">
             </div>
+
+            <div class="form-group">
+                <label for="import-kwh-display">Import Amount (kWh):</label>
+                <input type="number" id="import-kwh-display" name="import_kwh_display" placeholder="0" disabled>
+            </div>
+
             <div class="form-group">
                 <label for="export-kwh">Export Amount (kWh):</label>
-                <input type="number" id="export-kwh" name="export_kwh" step="0.01" placeholder="e.g., 250.5">
+                <input type="number" id="export-kwh" name="export_kwh" step="0.01" placeholder="e.g. 250">
             </div>
+
             <div class="form-group">
                 <label for="import-rate">Import Rate (RM/kWh):</label>
-                <input type="number" id="import-rate" name="import_rate" step="0.01" value="0.40">
+                <input type="number" id="import-rate" name="import_rate" step="0.01" placeholder="e.g. 0.40">
             </div>
+
             <div class="form-group">
                 <label for="export-rate">Export Rate (RM/kWh):</label>
-                <input type="number" id="export-rate" name="export_rate" step="0.01" placeholder="e.g., 0.55">
+                <input type="number" id="export-rate" name="export_rate" step="0.01" placeholder="e.g. 0.20">
             </div>
+
             <button id="calculate-btn">Calculate Bill</button>
         </section>
 
         <section class="results-section">
-            <h2>2. Billing Summary</h2>
+            <h2>Billing Summary</h2>
+
             <div class="results-grid">
-                <div class="result-item">
-                    <span class="label">Selected Period:</span>
-                    <span id="result-period" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Start Reading (kWh):</span>
-                    <span id="result-start-kwh" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">End Reading (kWh):</span>
-                    <span id="result-end-kwh" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Total Generated (kWh):</span>
-                    <span id="result-total-kwh" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Import (kWh):</span>
-                    <span id="result-import-kwh" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Export (kWh):</span>
-                    <span id="result-export-kwh" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Import Cost (RM):</span>
-                    <span id="result-import-cost" class="value">--</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Export Revenue (RM):</span>
-                    <span id="result-export-cost" class="value">--</span>
-                </div>
+                <div class="result-item"><span class="label">Selected Period:</span><span id="result-period" class="value">--</span></div>
+                <div class="result-item"><span class="label">Start Reading (kWh):</span><span id="result-start-kwh" class="value">--</span></div>
+                <div class="result-item"><span class="label">End Reading (kWh):</span><span id="result-end-kwh" class="value">--</span></div>
+                <div class="result-item"><span class="label">Total Generated (kWh):</span><span id="result-total-kwh" class="value">--</span></div>
+                <div class="result-item"><span class="label">Import (kWh):</span><span id="result-import-kwh" class="value">--</span></div>
+                <div class="result-item"><span class="label">Export (kWh):</span><span id="result-export-kwh" class="value">--</span></div>
+                <div class="result-item"><span class="label">Import Cost (RM):</span><span id="result-import-cost" class="value">--</span></div>
+                <div class="result-item"><span class="label">Export Revenue (RM):</span><span id="result-export-cost" class="value">--</span></div>
             </div>
+
             <div class="total-bill">
-                <span class="label">Total Bill (RM):</span>
-                <span id="result-total-bill" class="value-total">--</span>
+                <span class="label">Total Bill (RM):</span><span id="result-total-bill" class="value-total">--</span>
             </div>
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+    <footer>
+        <img id="footer-logo" src="" alt="Emit Solar Logo" class="footer-logo">
+        <p>Solar Billing Calculator by Hee Zi Jie © 2025</p>
+    </footer>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
