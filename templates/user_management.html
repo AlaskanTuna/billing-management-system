@@ -1,0 +1,131 @@
+<!-- templates/user_management.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Management | Billing Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <div class="sidebar-profile">
+                <div class="profile-icon">
+                    <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon">
+                </div>
+                <span class="profile-name">admin</span>
+            </div>
+
+            <div class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="nav-link">Billing Calculator</a>
+                <a href="{{ url_for('customers') }}" class="nav-link active">User Management</a>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="theme-switcher">
+                    <img src="" id="theme-icon" alt="Theme Toggle">
+                </div>
+                <a href="{{ url_for('logout') }}" class="sidebar-logout">Logout</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="page-header">
+                <h1>Customer Management</h1>
+                <a href="{{ url_for('new_customer') }}" class="action-button">+ Create New</a>
+            </div>
+
+            <div class="summary-card">
+                <h3>Total Customers</h3>
+                <span class="summary-value">12</span>
+                <span class="summary-trend">+2 this week</span>
+            </div>
+
+            <div class="controls-bar">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search customer...">
+                </div>
+                <div class="filter-sort-controls">
+                    <button class="control-button">Filter</button>
+                    <select class="control-button">
+                        <option>Sort by...</option>
+                        <option value="name">Name</option>
+                        <option value="date">Registration Date</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="customer-table">
+                    <thead>
+                        <tr>
+                            <th>Profile</th>
+                            <th>Contact</th>
+                            <th>Address</th>
+                            <th>Capacity</th>
+                            <th>Brand</th>
+                            <th>Registration Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if customers %}
+                            {% for customer in customers %}
+                            <tr>
+                                <td>
+                                    <div class="profile-cell">
+                                        <strong>{{ customer.name }}</strong>
+                                        <span>{{ customer.lee_no }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="contact-cell">
+                                        <span>{{ customer.email or 'N/A' }}</span>
+                                        <span>{{ customer.phone or 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ customer.address }}</td>
+                                <td>{{ "%.2f"|format(customer.capacity) }} kWp</td>
+                                <td>{{ customer.brand }}</td>
+                                <td>{{ customer.registration_date.strftime('%Y-%m-%d') if customer.registration_date else 'N/A' }}</td>
+                                <td>
+                                    <span class="status-pill {{ 'active' if customer.status == 'active' else 'deactivated' }}">
+                                        {{ customer.status.capitalize() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px;">
+                                    {% if error %}
+                                        {{ error }}
+                                    {% else %}
+                                        No customers found. Click "Create New" to add customers.
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer>
+                <img id="footer-logo" src="" alt="Emit Solar Logo" class="footer-logo">
+                <p>Solar Billing Management System by Hee Zi Jie © 2025</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
