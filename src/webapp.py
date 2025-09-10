@@ -1,6 +1,9 @@
 # src/webapp.py
 
-import config
+try:
+    import config
+except ImportError:
+    from src import config
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
@@ -42,15 +45,16 @@ def load_user(user_id):
 
 # DB MODEL
 
-class EnergyReader(db.Model):
+class SolarBillingReader(db.Model):
     __tablename__ = config.DB_TABLE_NAME
     id = db.Column(db.BigInteger, primary_key=True)
-    customer_id = db.Column(db.String(255), nullable=True, index=True)
+    customer_fk_id = db.Column(db.BigInteger, db.ForeignKey('customers.id'), nullable=False)
     Timestamp = db.Column(db.TIMESTAMP, nullable=False)
     Total_Positive_Real_Energy_kWh = db.Column(db.Float, nullable=True)
+    customer = db.relationship('Customer')
 
 class Customer(db.Model):
-    __tablename__ = 'customers'
+    __tablename__ = config.CUSTOMERS_TABLE_NAME
     id = db.Column(db.BigInteger, primary_key=True)
     lee_no = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
@@ -126,8 +130,8 @@ def get_customers():
     Fetches the list of customers.
     """
     try:
-        customers = db.session.query(EnergyReader.customer_id).distinct().all()
-        customer_list = [customer[0] for customer in customers if customer[0] is not None]
+        customers = db.session.query(Customer.lee_no).order_by(Customer.lee_no).all()
+        customer_list = [c[0] for c in customers if c[0] is not None]
         return jsonify(customer_list)
     except Exception as e:
         print(f"Customer Fetch Error: {e}")
@@ -203,25 +207,25 @@ def daily_readings():
     """ 
     Fetches the daily readings for a specific customer.
     """
-    customer_id = request.args.get("customer_id")
+    lee_no = request.args.get("customer_id")
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
 
-    if not all([customer_id, year, month]):
+    if not all([lee_no, year, month]):
         return jsonify({"error": "Missing required parameters."}), 400
 
     try:
         # Create a subquery to get the first reading of each day
         subquery = db.session.query(
-            EnergyReader,
+            SolarBillingReader,
             func.row_number().over(
-                partition_by=cast(EnergyReader.Timestamp, Date),
-                order_by=EnergyReader.Timestamp.asc()
+                partition_by=cast(SolarBillingReader.Timestamp, Date),
+                order_by=SolarBillingReader.Timestamp.asc()
             ).label('row_num')
-        ).filter(
-            EnergyReader.customer_id == customer_id,
-            func.extract('year', EnergyReader.Timestamp) == year,
-            func.extract('month', EnergyReader.Timestamp) == month
+        ).join(Customer).filter(
+            Customer.lee_no == lee_no,
+            func.extract('year', SolarBillingReader.Timestamp) == year,
+            func.extract('month', SolarBillingReader.Timestamp) == month
         ).subquery()
 
         # Select from the subquery only the rows where row_num is 1
