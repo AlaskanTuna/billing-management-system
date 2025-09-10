@@ -42,7 +42,7 @@
 
                     <div class="form-group">
                         <label for="customer-select">Customer:</label>
-                        <select id="customer-select" name="customer"><option value="">Loading...</option></select>
+                        <button type="button" id="select-customer-btn" class="control-button">Select Customer</button>
                     </div>
 
                     <div class="form-group">
@@ -62,7 +62,7 @@
 
                     <div class="form-group">
                         <label for="import-rate">Import Rate (RM/kWh):</label>
-                        <input type="number" id="import-rate" name="import_rate" step="0.01" value="0.40">
+                        <input type="number" id="import-rate" name="import_rate" step="0.01" placeholder="e.g. 0.40">
                     </div>
 
                     <div class="form-group">
@@ -85,11 +85,33 @@
                         <div class="result-item"><span class="label">Import Cost (RM):</span><span id="result-import-cost" class="value">--</span></div>
                         <div class="result-item"><span class="label">Export Revenue (RM):</span><span id="result-export-cost" class="value">--</span></div>
                     </div>
+
                     <div class="total-bill">
                         <span class="label">Total Bill (RM):</span><span id="result-total-bill" class="value-total">--</span>
                     </div>
                 </section>
             </div>
+
+            <div id="customer-select-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Select Customer</h2>
+                        <span class="close-modal">×</span>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="customer-search-wrapper">
+                            <img src="{{ url_for('static', filename='icons/search.svg') }}" class="search-icon" alt="Search">
+                            <input type="text" id="customer-search-input" placeholder="Search by Name or LEE No">
+                        </div>
+                        <div id="customer-list-container" class="file-list"></div>
+                        <div class="action-buttons">
+                            <button id="confirm-customer-btn" class="action-button">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <footer>
                 <img id="footer-logo" src="" alt="Emit Solar Logo" class="footer-logo">
                 <p>Solar Billing Management System by Hee Zi Jie © 2025</p>

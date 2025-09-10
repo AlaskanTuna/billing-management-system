@@ -197,10 +197,78 @@ $(document).ready(function() {
         resultTotalBill.text(`RM ${totalBill.toFixed(2)}`);
     }
 
-    // EVENT LISTENERS
+    exportKwhInput.on('input', updatePreliminaryCalculations);
+    calculateBtn.on('click', calculateAndDisplayBill);
 
-    customerSelect.on('change', async function() {
-        const customerId = $(this).val();
+    // CUSTOMER SELECTION MODAL
+
+    const selectCustomerBtn = $('#select-customer-btn');
+    const customerModal = $('#customer-select-modal');
+    const customerListContainer = $('#customer-list-container');
+    const customerSearchInput = $('#customer-search-input');
+    const confirmCustomerBtn = $('#confirm-customer-btn');
+
+    let allCustomers = [];
+    let selectedCustomerCode = null;
+
+    // Open the modal and fetch the customer list
+    selectCustomerBtn.on('click', async () => {
+        customerModal.css('display', 'flex');
+        customerListContainer.html('<div class="list-status-message"><div class="loading-spinner"></div>Loading Customers...</div>');
+
+        try {
+            const response = await fetch('/api/customers');
+            if (!response.ok) throw new Error('Network error');
+            allCustomers = await response.json();
+            renderCustomerList(allCustomers);
+        } catch (error) {
+            console.error("Failed to fetch customers:", error);
+            customerListContainer.html('<div class="list-status-message">Could not connect to the server.</div>');
+        }
+    });
+
+    customerModal.find('.close-modal').on('click', () => {
+        customerModal.css('display', 'none');
+    });
+
+    function renderCustomerList(customers) {
+        customerListContainer.empty();
+        if (!customers || customers.length === 0) {
+            customerListContainer.html('<div class="list-status-message">No customers found.</div>');
+            return;
+        }
+        customers.forEach(customer => {
+            const item = $(`<div class="file-item" data-code="${customer}"><div><strong>${customer}</strong></div></div>`);
+            
+            item.on('click', function() {
+                customerListContainer.find('.file-item.active').removeClass('active');
+                $(this).addClass('active');
+            });
+            customerListContainer.append(item);
+        });
+    }
+
+    confirmCustomerBtn.on('click', () => {
+        const activeItem = customerListContainer.find('.file-item.active');
+        if (activeItem.length > 0) {
+            selectedCustomerCode = activeItem.data('code');
+            selectCustomerBtn.text(selectedCustomerCode);
+            handleCustomerChange();
+        }
+        customerModal.css('display', 'none');
+    });
+
+    // Search filter
+    customerSearchInput.on('input', () => {
+        const searchTerm = customerSearchInput.val().toLowerCase();
+        const filteredCustomers = allCustomers.filter(c => c.toLowerCase().includes(searchTerm));
+        renderCustomerList(filteredCustomers);
+    });
+
+    async function handleCustomerChange() {
+        if (!selectedCustomerCode) return;
+        
+        // Reset state for new customer
         currentReadings = {};
         loadedMonths.clear();
         startDate = null;
@@ -208,39 +276,19 @@ $(document).ready(function() {
         dateRangePicker.val('');
         dateRangePicker.prop('disabled', true);
 
-        if (customerId) {
-            const now = moment();
-            await Promise.all([
-                fetchReadingsForMonth(customerId, now.clone().subtract(1, 'month').year(), now.clone().subtract(1, 'month').month() + 1),
-                fetchReadingsForMonth(customerId, now.year(), now.month() + 1),
-                fetchReadingsForMonth(customerId, now.clone().add(1, 'month').year(), now.clone().add(1, 'month').month() + 1)
-            ]);
+        const now = moment();
 
-            // Reinitialize calendar picker
-            setupDateRangePicker();
-            dateRangePicker.prop('disabled', false);
-        }
-    });
-    exportKwhInput.on('input', updatePreliminaryCalculations);
-    calculateBtn.on('click', calculateAndDisplayBill);
-
-    // FETCH CUSTOMERS
-
-    async function populateCustomerDropdown() {
-        try {
-            const response = await fetch('/api/customers');
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const customers = await response.json();
-            customerSelect.html('<option value="">Select Customer</option>');
-            customers.forEach(customerId => {
-                customerSelect.append($('<option>', { value: customerId, text: customerId }));
-            });
-        } catch (error) {
-            console.error("Failed to fetch customers:", error);
-            customerSelect.html('<option value="">Error loading customers</option>');
-        }
+        await Promise.all([
+            fetchReadingsForMonth(selectedCustomerCode, now.clone().subtract(1, 'month').year(), now.clone().subtract(1, 'month').month() + 1),
+            fetchReadingsForMonth(selectedCustomerCode, now.year(), now.month() + 1),
+            fetchReadingsForMonth(selectedCustomerCode, now.clone().add(1, 'month').year(), now.clone().add(1, 'month').month() + 1)
+        ]);
+        
+        // Reinitialize the date picker with new data
+        setupDateRangePicker();
+        dateRangePicker.prop('disabled', false);
     }
 
-    populateCustomerDropdown();
+    // Start the webapp process
     dateRangePicker.prop('disabled', true);
 });
