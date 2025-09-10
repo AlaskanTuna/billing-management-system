@@ -2,7 +2,7 @@
 
 import config
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, cast, Date
@@ -48,6 +48,20 @@ class EnergyReader(db.Model):
     customer_id = db.Column(db.String(255), nullable=True, index=True)
     Timestamp = db.Column(db.TIMESTAMP, nullable=False)
     Total_Positive_Real_Energy_kWh = db.Column(db.Float, nullable=True)
+
+class Customer(db.Model):
+    __tablename__ = 'customers'
+    id = db.Column(db.BigInteger, primary_key=True)
+    lee_no = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.Text, nullable=False)
+    capacity = db.Column(db.Numeric(10, 2), nullable=False)
+    brand = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    registration_date = db.Column(db.Date)
+    last_modified = db.Column(db.TIMESTAMP(timezone=True))
+    status = db.Column(db.String(20))
 
 # API ROUTES
 
@@ -118,6 +132,70 @@ def get_customers():
     except Exception as e:
         print(f"Customer Fetch Error: {e}")
         return jsonify({"error": "Failed to fetch customers from database."}), 500
+
+@app.route('/customers')
+@login_required
+def customers():
+    """ 
+    Displays the customer management page with a list of all customers.
+    """
+    try:
+        all_customers = Customer.query.order_by(Customer.name).all()
+        return render_template("user_management.html", customers=all_customers)
+    except Exception as e:
+        print(f"Error fetching customers: {e}")
+        return render_template("user_management.html", customers=[], error="Could not fetch customer list.")
+
+@app.route('/customers/new', methods=['GET', 'POST'])
+@login_required
+def new_customer():
+    """
+    Handles the creation of a new customer.
+    """
+    if request.method == 'POST':
+        try:
+            new_customer = Customer(
+                lee_no=request.form['lee_no'],
+                name=request.form['name'],
+                address=request.form['address'],
+                capacity=request.form['capacity'],
+                brand=request.form['brand'],
+                email=request.form['email'],
+                phone=request.form['phone'],
+                status=request.form['status'],
+            )
+            db.session.add(new_customer)
+            db.session.commit()
+            flash(f"Customer '{new_customer.name}' created successfully.", "success")
+            return redirect(url_for('customers'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Customer Creation Error: {e}")
+            flash(f"Customer Creation Error: A customer with the same LEE_NO might already exist.", "error")
+    return render_template("new_customer.html")
+
+@app.route('/api/get-all-customers')
+@login_required 
+def get_all_customers_for_loggers():
+    """
+    API endpoint for field loggers. 
+    @return: JSON list of all customers
+    """
+    try:
+        customers = Customer.query.with_entities(
+            Customer.id, 
+            Customer.lee_no, 
+            Customer.name
+        ).order_by(Customer.lee_no).all()
+
+        customer_list = [
+            {"id": c.id, "code": c.lee_no, "name": c.name}
+            for c in customers
+        ]
+        return jsonify(customer_list)
+    except Exception as e:
+        print(f"API Error at /api/get-all-customers: {e}")
+        return jsonify({"error": "Failed to fetch customer list"}), 500
 
 @app.route('/api/daily-readings')
 @login_required
