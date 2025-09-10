@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     };
 
-    // Initialize on landing
+    // Initialization
     const savedTheme = localStorage.getItem('theme');
     const isDarkMode = savedTheme ? savedTheme === 'dark' : false;
     setTheme(isDarkMode);
@@ -70,6 +70,7 @@ $(document).ready(function() {
         if (!customerId || loadedMonths.has(monthKey)) return false;
         console.log(`Fetching data for: ${monthKey}`);
 
+        // Fetch data from database
         try {
             const response = await fetch(`/api/daily-readings?customer_id=${customerId}&year=${year}&month=${month}`);
             if (!response.ok) throw new Error('Network response not ok');
