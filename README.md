@@ -28,14 +28,19 @@
 4. Create `.env` file at root directory with the following format:
 > **Note:** The provided credentials is for the central database table that collects energy readings from all customers.
 
-```bash
-DB_HOST = ""
-DB_PORT = ""
-DB_NAME = ""
-DB_TABLE_NAME = ""
-DB_USERNAME = ""
-DB_PASSWORD = ""
-```
+    ```bash
+    # DATABASE CREDENTIALS
+    DB_HOST = ""
+    DB_PORT = ""
+    DB_NAME = ""
+    DB_TABLE_NAME = ""
+    DB_USERNAME = ""
+    DB_PASSWORD = ""
+
+    # SECRET KEYS
+
+    API_SECRET_KEY = ""
+    ```
 
 ## Hosting the Webapp on GCP
 
