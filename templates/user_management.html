@@ -46,8 +46,8 @@
 
             <div class="summary-card">
                 <h3>Total Customers</h3>
-                <span class="summary-value">12</span>
-                <span class="summary-trend">+2 this week</span>
+                <span class="summary-value">{{ total_customers | default('N/A') }}</span>
+                <span class="summary-trend">+{{ new_customers_this_week | default('0') }} this week</span>
             </div>
 
             <div class="controls-bar">
