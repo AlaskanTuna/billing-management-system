@@ -214,7 +214,7 @@ $(document).ready(function() {
     // Open the modal and fetch the customer list
     selectCustomerBtn.on('click', async () => {
         customerModal.css('display', 'flex');
-        customerListContainer.html('<div class="list-status-message"><div class="loading-spinner"></div>Loading Customers...</div>');
+        customerListContainer.html('<div class="list-status-message"><div class="loading-spinner"></div>Loading customers...</div>');
 
         try {
             const response = await fetch('/api/customers');
@@ -234,7 +234,7 @@ $(document).ready(function() {
     function renderCustomerList(customers) {
         customerListContainer.empty();
         if (!customers || customers.length === 0) {
-            customerListContainer.html('<div class="list-status-message">No customers found.</div>');
+            customerListContainer.html('<div class="list-status-message">No customers found on the server.</div>');
             return;
         }
         customers.forEach(customer => {
