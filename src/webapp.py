@@ -8,6 +8,7 @@ except ImportError:
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
+from datetime import date, timedelta
 from sqlalchemy import func, cast, Date
 
 # GLOBAL VARIABLES
@@ -63,9 +64,9 @@ class Customer(db.Model):
     brand = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(100))
     phone = db.Column(db.String(20))
-    registration_date = db.Column(db.Date)
-    last_modified = db.Column(db.TIMESTAMP(timezone=True))
-    status = db.Column(db.String(20))
+    registration_date = db.Column(db.Date, server_default=db.func.current_date())
+    last_modified = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now(), onupdate=db.func.now())
+    status = db.Column(db.String(20), default="active")
 
 # API ROUTES
 
@@ -141,13 +142,31 @@ def get_customers():
 @login_required
 def customers():
     """ 
-    Displays the customer management page with a list of all customers.
+    Displays the list of all customers and summary statistics.
     """
     try:
+        # Fetch all customers ordered by name
         all_customers = Customer.query.order_by(Customer.name).all()
-        return render_template("user_management.html", customers=all_customers)
+        total_customers = len(all_customers)
+
+        # Calculate the start of the week
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+
+        # Query for customers registered >= start of the week
+        new_customers_this_week = db.session.query(Customer).filter(
+            Customer.registration_date >= start_of_week
+        ).count()
+
+        return render_template(
+            "user_management.html", 
+            customers=all_customers,
+            total_customers=total_customers,
+            new_customers_this_week=new_customers_this_week
+        )
     except Exception as e:
-        print(f"Error fetching customers: {e}")
+        print(f"Customer Fetch Error: {e}")
+        flash("Could not load customer statistics.", "error")
         return render_template("user_management.html", customers=[], error="Could not fetch customer list.")
 
 @app.route('/customers/new', methods=['GET', 'POST'])
@@ -198,7 +217,7 @@ def get_all_customers_for_loggers():
         ]
         return jsonify(customer_list)
     except Exception as e:
-        print(f"API Error at /api/get-all-customers: {e}")
+        print(f"API Error: {e}")
         return jsonify({"error": "Failed to fetch customer list"}), 500
 
 @app.route('/api/daily-readings')
@@ -240,6 +259,33 @@ def daily_readings():
     except Exception as e:
         print(f"Daily Reading Error: {e}")
         return jsonify({"error": "Failed to fetch daily readings from database."}), 500
+
+@app.route('/api/v1/loggers/customers')
+def api_v1_get_customers_for_loggers():
+    """
+    A secure API endpoint for loggers to fetch the customer list.
+    """
+    provided_key = request.headers.get('X-API-Key')
+
+    # Validate key from logger
+    if not provided_key or provided_key != config.API_SECRET_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        customers = Customer.query.with_entities(
+            Customer.id, 
+            Customer.lee_no, 
+            Customer.name
+        ).order_by(Customer.lee_no).all()
+
+        customer_list = [
+            {"id": c.id, "code": c.lee_no, "name": c.name}
+            for c in customers
+        ]
+        return jsonify(customer_list)
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify({"error": "Failed to fetch customer list"}), 500
 
 # RUN WEBAPP
 
