@@ -26,7 +26,7 @@
     ```
 
 4. Create `.env` file at root directory with the following format:
-> **Note:** The provided credentials is for the central database table that collects energy readings from all customers.
+    > **Note:** The provided credentials is for the central database table that collects energy readings from all customers.
 
     ```bash
     # DATABASE CREDENTIALS
